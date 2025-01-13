@@ -55,9 +55,15 @@ elif menu == "속성 분석":
                 if st.button("테이블 생성"):
                     if table_name:
                         new_table = st.session_state.data[[selected_column]].copy()
-                        st.session_state.created_tables[table_name] = new_table
-                        st.success(f"테이블 '{table_name}'이 생성되었습니다!")
-                        st.dataframe(new_table)
+
+                        # 값별 개수 데이터프레임 추가
+                        value_counts_df = value_counts.reset_index()
+                        value_counts_df.columns = [selected_column, "Count"]
+                        new_table_with_counts = pd.merge(new_table, value_counts_df, on=selected_column, how="left")
+
+                        st.session_state.created_tables[table_name] = new_table_with_counts
+                        st.success(f"테이블 '{table_name}'이 생성되었습니다! 값별 개수도 함께 저장되었습니다.")
+                        st.dataframe(new_table_with_counts)
                     else:
                         st.error("테이블 이름을 입력하세요.")
     else:
