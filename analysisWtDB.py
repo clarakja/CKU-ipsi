@@ -59,33 +59,60 @@ elif menu == "속성 분석":
         columns = list(data.columns)
         st.write(columns)
 
-        selected_column = st.selectbox("속성을 선택하세요", columns)
+        selected_columns = st.multiselect("속성을 선택하세요", columns)
 
-        if selected_column:
-            value_counts = data[selected_column].value_counts()
-            st.write(f"선택한 속성 '{selected_column}'의 값별 개수:")
-            st.dataframe(value_counts)
+        if selected_columns:
+            conditions = {}
 
-            # 테이블 생성 옵션
-            create_table = st.checkbox("이 데이터를 새로운 테이블로 생성하시겠습니까?")
+            for column in selected_columns:
+                st.subheader(f"속성 '{column}' 조건 설정")
+                unique_values = data[column].dropna().unique()
 
-            if create_table:
-                table_name = st.text_input("새로운 테이블 이름을 입력하세요")
+                # 조건 유형 선택
+                condition_type = st.selectbox(
+                    f"'{column}'의 조건을 선택하세요",
+                    ["Count", "같다", "같지 않다"]
+                )
 
-                if st.button("테이블 생성"):
-                    if table_name:
-                        new_table = data[[selected_column]].copy()
-
-                        # 값별 개수 데이터프레임 추가
-                        value_counts_df = value_counts.reset_index()
-                        value_counts_df.columns = [selected_column, "Count"]
-                        new_table_with_counts = pd.merge(new_table, value_counts_df, on=selected_column, how="left")
-
-                        save_table_to_db(table_name, new_table_with_counts)
-                        st.success(f"테이블 '{table_name}'이 생성되었습니다! 값별 개수도 함께 저장되었습니다.")
-                        st.dataframe(new_table_with_counts)
+                if condition_type == "Count":
+                    st.write(f"'{column}' 값별 개수:")
+                    value_counts = data[column].value_counts()
+                    st.dataframe(value_counts)
+                elif condition_type == "같다":
+                    if data[column].dtype == 'object' or len(unique_values) <= 10:
+                        selected_values = st.multiselect(f"'{column}'의 값을 선택하세요", unique_values)
+                        if selected_values:
+                            conditions[column] = data[column].isin(selected_values)
                     else:
-                        st.error("테이블 이름을 입력하세요.")
+                        selected_value = st.selectbox(f"'{column}'의 값을 선택하세요", unique_values)
+                        conditions[column] = data[column] == selected_value
+                elif condition_type == "같지 않다":
+                    if data[column].dtype == 'object' or len(unique_values) <= 10:
+                        unselected_values = st.multiselect(f"'{column}'에서 제외할 값을 선택하세요", unique_values)
+                        if unselected_values:
+                            conditions[column] = ~data[column].isin(unselected_values)
+                    else:
+                        unselected_value = st.selectbox(f"'{column}'에서 제외할 값을 선택하세요", unique_values)
+                        conditions[column] = data[column] != unselected_value
+
+            if conditions:
+                combined_condition = pd.Series([True] * len(data))
+                for condition in conditions.values():
+                    combined_condition &= condition
+
+                filtered_data = data[combined_condition]
+                st.write("조건에 맞는 데이터:")
+                st.dataframe(filtered_data)
+
+                save_table = st.checkbox("이 데이터를 새로운 테이블로 저장하시겠습니까?")
+                if save_table:
+                    table_name = st.text_input("새로운 테이블 이름을 입력하세요")
+                    if st.button("테이블 저장"):
+                        if table_name:
+                            save_table_to_db(table_name, filtered_data)
+                            st.success(f"테이블 '{table_name}'이 저장되었습니다!")
+                        else:
+                            st.error("테이블 이름을 입력하세요.")
     else:
         st.warning("먼저 엑셀 파일을 업로드하세요.")
 
