@@ -57,9 +57,16 @@ def condition_search_by_count(high_school_analysis, data):
 
     return filtered_df
 
-def condition_search_by_region(high_school_analysis):
+def condition_search_by_region(high_school_analysis, data):
     """지역 기준 조건 검색 기능"""
-    unique_regions = high_school_analysis['소재지'].unique()
+    # 원본 데이터에서 고등학교명과 소재지 매핑
+    high_school_analysis['소재지'] = high_school_analysis['고등학교명'].map(
+        data.set_index('고등학교명')['소재지'].to_dict()
+    )
+
+    # 고등학교 분석 데이터에서 고유한 지역 가져오기
+    unique_regions = high_school_analysis['소재지'].dropna().unique()
+
     selected_region = st.selectbox("검색할 지역을 선택하세요", unique_regions)
 
     if selected_region:
