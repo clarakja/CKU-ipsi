@@ -15,7 +15,7 @@ def upload_excel_file():
         if not all(col in data.columns for col in required_columns):
             st.error("업로드된 파일에 필수 필드가 누락되었습니다: 고등학교명, 소재지, 1차등록, 환불")
             st.stop()
-        else
+        else:
             data = pd.read_excel(uploaded_file, header=0)
             st.success("파일 업로드 성공!")
             st.dataframe(data.head())
