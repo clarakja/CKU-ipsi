@@ -10,17 +10,16 @@ def upload_excel_file():
     st.markdown("1차등록 필드값: (미등록자, -1)")
     st.markdown("환불 필드 값: (미환불자, 0)")
     uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx", "xls"]) 
-    
+    required_columns = ["고등학교명", "소재지", "1차등록", "환불"]
+    if not all(col in data.columns for col in required_columns):
+        st.error("업로드된 파일에 필수 필드가 누락되었습니다: 고등학교명, 소재지, 1차등록, 환불")
+        st.stop()    
+        
     if uploaded_file is not None:
-        required_columns = ["고등학교명", "소재지", "1차등록", "환불"]
-        if not all(col in data.columns for col in required_columns):
-            st.error("업로드된 파일에 필수 필드가 누락되었습니다: 고등학교명, 소재지, 1차등록, 환불")
-            st.stop()
-        else:
-            data = pd.read_excel(uploaded_file, header=0)
-            st.success("파일 업로드 성공!")
-            st.dataframe(data.head())
-            return data
+        data = pd.read_excel(uploaded_file, header=0)
+        st.success("파일 업로드 성공!")
+        st.dataframe(data.head())
+        return data
     return None
 
 def analyze_by_category(data, category_column, filter_conditions, column_name="등록자수", include_field=None):
