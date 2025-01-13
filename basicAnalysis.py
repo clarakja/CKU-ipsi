@@ -4,6 +4,19 @@ import pandas as pd
 # Streamlit 앱 시작
 st.title("엑셀 파일 분석 및 테이블 생성 도구")
 
+# 전역 변수
+data = None
+uploaded_file = None
+created_tables = {}
+
+# 파일 업로드 유지
+if "data" not in st.session_state:
+    st.session_state.data = None
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+if "created_tables" not in st.session_state:
+    st.session_state.created_tables = {}
+    
 # 메뉴 선택
 menu = st.sidebar.selectbox("메뉴 선택", ["엑셀 업로드", "속성 분석", "테이블 생성", "테이블 다운로드"])
 
