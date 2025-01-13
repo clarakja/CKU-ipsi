@@ -18,7 +18,7 @@ if "created_tables" not in st.session_state:
     st.session_state.created_tables = {}
 
 # 메뉴 선택
-menu = st.sidebar.selectbox("메뉴 선택", ["엑셀 업로드", "속성 분석", "테이블 생성", "테이블 다운로드"])
+menu = st.sidebar.selectbox("메뉴 선택", ["엑셀 업로드", "속성 분석", "테이블 생성", "테이블 병합", "테이블 다운로드"])
 
 # 엑셀 파일 업로드
 if menu == "엑셀 업로드":
@@ -92,6 +92,37 @@ elif menu == "테이블 생성":
                     st.error("테이블 이름을 입력하세요.")
     else:
         st.warning("먼저 엑셀 파일을 업로드하세요.")
+
+# 테이블 병합
+elif menu == "테이블 병합":
+    if st.session_state.created_tables:
+        st.header("테이블 병합")
+        table_names = list(st.session_state.created_tables.keys())
+        selected_tables = st.multiselect("병합할 테이블을 선택하세요", table_names)
+
+        if selected_tables:
+            merge_type = st.radio("병합 방법을 선택하세요", ("수평 병합", "수직 병합"))
+            table_name = st.text_input("병합된 테이블 이름을 입력하세요")
+
+            if st.button("테이블 병합"):
+                if table_name:
+                    try:
+                        if merge_type == "수평 병합":
+                            merged_table = pd.concat([st.session_state.created_tables[table] for table in selected_tables], axis=1)
+                        elif merge_type == "수직 병합":
+                            merged_table = pd.concat([st.session_state.created_tables[table] for table in selected_tables], axis=0)
+
+                        st.session_state.created_tables[table_name] = merged_table
+                        st.success(f"테이블 '{table_name}'이 병합되었습니다!")
+                        st.dataframe(merged_table)
+                    except Exception as e:
+                        st.error(f"병합 중 오류가 발생했습니다: {e}")
+                else:
+                    st.error("병합된 테이블의 이름을 입력하세요.")
+        else:
+            st.info("병합할 테이블을 선택하세요.")
+    else:
+        st.warning("생성된 테이블이 없습니다.")
 
 # 테이블 다운로드
 elif menu == "테이블 다운로드":
