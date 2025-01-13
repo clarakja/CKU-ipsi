@@ -14,7 +14,7 @@ def upload_excel_file():
         return data
     return None
 
-def analyze_by_category(data, category_column, filter_conditions, column_name="등록자수"):
+def analyze_by_category(data, category_column, filter_conditions, column_name="등록자수", include_field=None):
     """지정된 카테고리별 지원자와 등록자 수를 분석하는 함수."""
     # 지원자 수 계산
     value_counts = data[category_column].value_counts()
@@ -33,6 +33,12 @@ def analyze_by_category(data, category_column, filter_conditions, column_name="�
     merged_df.fillna(0, inplace=True)
     merged_df['지원자수'] = merged_df['지원자수'].astype(int)
     merged_df[column_name] = merged_df[column_name].astype(int)
+
+    # 추가 필드 병합
+    if include_field:
+        field_mapping = data.set_index(category_column)[include_field].to_dict()
+        merged_df[include_field] = merged_df[category_column].map(field_mapping)
+
     merged_df_sorted = merged_df.sort_values(by=column_name, ascending=False)
     
     return merged_df_sorted
@@ -59,14 +65,12 @@ def condition_search_by_count(high_school_analysis, data):
 
 def condition_search_by_region(high_school_analysis, data):
     """지역 기준 조건 검색 기능"""
-    # 원본 데이터에서 고등학교명과 소재지 매핑
-    high_school_analysis['소재지'] = high_school_analysis['고등학교명'].map(
-        data.set_index('고등학교명')['소재지'].to_dict()
-    )
+    if '소재지' not in high_school_analysis.columns:
+        high_school_analysis['소재지'] = high_school_analysis['고등학교명'].map(
+            data.set_index('고등학교명')['소재지'].to_dict()
+        )
 
-    # 고등학교 분석 데이터에서 고유한 지역 가져오기
     unique_regions = high_school_analysis['소재지'].dropna().unique()
-
     selected_region = st.selectbox("검색할 지역을 선택하세요", unique_regions)
 
     if selected_region:
@@ -115,7 +119,7 @@ elif menu == "고등학교별 분석" and st.session_state.data is not None:
         st.session_state.data["환불"] == 0
     ]
     st.session_state.high_school_analysis = analyze_by_category(
-        st.session_state.data, "고등학교명", high_school_conditions
+        st.session_state.data, "고등학교명", high_school_conditions, include_field="소재지"
     )
     display_analysis_results(st.session_state.high_school_analysis, "고등학교")
 
@@ -136,7 +140,7 @@ elif menu == "인원수 기준 검색" and st.session_state.high_school_analysis
 
 elif menu == "지역 기준 검색" and st.session_state.high_school_analysis is not None:
     st.session_state.filtered_df = condition_search_by_region(
-        st.session_state.high_school_analysis
+        st.session_state.high_school_analysis, st.session_state.data
     )
 
 elif menu == "엑셀 다운로드" and st.session_state.high_school_analysis is not None:
