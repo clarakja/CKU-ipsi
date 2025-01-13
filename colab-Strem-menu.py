@@ -42,8 +42,8 @@ def display_analysis_results(data, category_name):
     st.write(f"{category_name}별 지원자 및 등록자 현황")
     st.dataframe(data)
 
-def condition_search(high_school_analysis, data):
-    """조건 검색 기능"""
+def condition_search_by_count(high_school_analysis, data):
+    """인원수 기준 조건 검색 기능"""
     search_condition = st.number_input("등록자 수 기준을 입력하세요", min_value=0, step=1, value=0)
     filtered_df = high_school_analysis[high_school_analysis['등록자수'] > search_condition]
 
@@ -57,13 +57,26 @@ def condition_search(high_school_analysis, data):
 
     return filtered_df
 
+def condition_search_by_region(high_school_analysis):
+    """지역 기준 조건 검색 기능"""
+    unique_regions = high_school_analysis['소재지'].unique()
+    selected_region = st.selectbox("검색할 지역을 선택하세요", unique_regions)
+
+    if selected_region:
+        filtered_df = high_school_analysis[high_school_analysis['소재지'] == selected_region]
+        st.write(f"선택한 지역 '{selected_region}'의 고등학교 현황")
+        st.dataframe(filtered_df)
+        return filtered_df
+    return None
+
 def download_results(high_school_analysis, regional_analysis, filtered_df):
     """엑셀 다운로드 기능"""
     if st.button("엑셀 파일로 저장"):
         with pd.ExcelWriter('output.xlsx') as writer:
             high_school_analysis.to_excel(writer, sheet_name='고등학교별 등록 현황', index=False)
             regional_analysis.to_excel(writer, sheet_name='지역별 등록 현황', index=False)
-            filtered_df.to_excel(writer, sheet_name='검색 결과', index=False)
+            if filtered_df is not None:
+                filtered_df.to_excel(writer, sheet_name='검색 결과', index=False)
 
         st.success("분석 결과가 output.xlsx로 저장되었습니다.")
         with open('output.xlsx', 'rb') as file:
@@ -75,7 +88,7 @@ def download_results(high_school_analysis, regional_analysis, filtered_df):
             )
 
 # 메뉴 선택
-menu = st.sidebar.selectbox("메뉴 선택", ["엑셀 업로드", "고등학교별 분석", "소재지별 분석", "조건 검색", "엑셀 다운로드"])
+menu = st.sidebar.selectbox("메뉴 선택", ["엑셀 업로드", "고등학교별 분석", "소재지별 분석", "인원수 기준 검색", "지역 기준 검색", "엑셀 다운로드"])
 
 if "data" not in st.session_state:
     st.session_state.data = None
@@ -109,9 +122,14 @@ elif menu == "소재지별 분석" and st.session_state.data is not None:
     )
     display_analysis_results(st.session_state.regional_analysis, "소재지")
 
-elif menu == "조건 검색" and st.session_state.high_school_analysis is not None:
-    st.session_state.filtered_df = condition_search(
+elif menu == "인원수 기준 검색" and st.session_state.high_school_analysis is not None:
+    st.session_state.filtered_df = condition_search_by_count(
         st.session_state.high_school_analysis, st.session_state.data
+    )
+
+elif menu == "지역 기준 검색" and st.session_state.high_school_analysis is not None:
+    st.session_state.filtered_df = condition_search_by_region(
+        st.session_state.high_school_analysis
     )
 
 elif menu == "엑셀 다운로드" and st.session_state.high_school_analysis is not None:
