@@ -45,6 +45,21 @@ elif menu == "속성 분석":
             value_counts = st.session_state.data[selected_column].value_counts()
             st.write(f"선택한 속성 '{selected_column}'의 값별 개수:")
             st.dataframe(value_counts)
+
+            # 테이블 생성 옵션
+            create_table = st.checkbox("이 데이터를 새로운 테이블로 생성하시겠습니까?")
+
+            if create_table:
+                table_name = st.text_input("새로운 테이블 이름을 입력하세요")
+
+                if st.button("테이블 생성"):
+                    if table_name:
+                        new_table = st.session_state.data[[selected_column]].copy()
+                        st.session_state.created_tables[table_name] = new_table
+                        st.success(f"테이블 '{table_name}'이 생성되었습니다!")
+                        st.dataframe(new_table)
+                    else:
+                        st.error("테이블 이름을 입력하세요.")
     else:
         st.warning("먼저 엑셀 파일을 업로드하세요.")
 
