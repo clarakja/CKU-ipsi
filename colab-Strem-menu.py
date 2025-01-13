@@ -6,12 +6,20 @@ st.title("고등학교 및 지역별 지원자 분석 도구")
 
 def upload_excel_file():
     """엑셀 파일 업로드 기능"""
-    uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx", "xls"])
+    st.markdown("업로드 파일에는 다음 필드가 포함되어야 합니다: **고등학교명, 소재지, 1차등록, 환불**")
+    st.markdown("1차등록에는 미등록자에는 -1, 환불이 없으면 0으로 채워 주세요")
+    uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx", "xls"]) 
+    
     if uploaded_file is not None:
-        data = pd.read_excel(uploaded_file, header=0)
-        st.success("파일 업로드 성공!")
-        st.dataframe(data.head())
-        return data
+        required_columns = ["고등학교명", "소재지", "1차등록", "환불"]
+        if not all(col in data.columns for col in required_columns):
+            st.error("업로드된 파일에 필수 필드가 누락되었습니다: 고등학교명, 소재지, 1차등록, 환불")
+            st.stop()
+        else
+            data = pd.read_excel(uploaded_file, header=0)
+            st.success("파일 업로드 성공!")
+            st.dataframe(data.head())
+            return data
     return None
 
 def analyze_by_category(data, category_column, filter_conditions, column_name="등록자수", include_field=None):
